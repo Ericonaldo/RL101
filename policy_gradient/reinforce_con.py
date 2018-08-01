@@ -10,8 +10,8 @@ from math import *
 ENV = "Pendulum-v0"
 
 MEMORY_SIZE = 10000
-EPISODES = 10000
-MAX_STEP = 500
+EPISODES = 1000
+MAX_STEP = 200
 BATCH_SIZE = 32
 UPDATE_PERIOD = 200
 
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                 #keep track of transition        
                 memory.append(Transition(state=state, action=action, reward=reward, next_state=next_state, done=done))
                 state = next_state
-                print("step = {}".format(step))
+                #print("step = {}".format(step))
                 
             running_reward = running_reward*0.99 + 0.01*reward_all
             print("episode = {} reward = {}".format(episode, running_reward))
