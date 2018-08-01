@@ -8,6 +8,7 @@ dqn:
 policy_gradient:
     -reinforce_dis: 离散动作的REINFORCE算法，solve的环境是"CortPole-v0"
     -reinforce_con: 连续动作的REINFORCE算法，solve的环境是"Pendulum-v0"，不能收敛，不知为何
-
+actor_critic:
+    -ac_con: 连续动作的REINFORCE算法，solve的环境是"Pendulum-v0"，收敛效果不好，要400episode以后才能偶尔平衡，MovanZhou的也是这样
  
 and so on......
