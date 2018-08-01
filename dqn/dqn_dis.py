@@ -22,7 +22,7 @@ class DeepQNetwork():
         self.network()
         self.sess = sess
         self.sess.run(tf.global_variables_initializer())
-        tf.summary.FileWriter("DQN/summaries", sess.graph)
+        tf.summary.FileWriter("DQN_dis/summaries", sess.graph)
 
 
     def net_frame(self, scope, collections_name, num_actions, inputs):

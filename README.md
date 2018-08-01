@@ -5,5 +5,9 @@ random_agents:
 dqn:
     -dqn_dis: 离散动作的dqn，solve的环境是"CortPole-v0"
     -dqn_con: 连续动作的dqn，solve的环境是"Pendulum-v0"，将连续动作离散化，8000步以上可以收敛
-    
+policy_gradient:
+    -reinforce_dis: 离散动作的REINFORCE算法，solve的环境是"CortPole-v0"
+    -reinforce_con: 连续动作的REINFORCE算法，solve的环境是"Pendulum-v0"，不能收敛，不知为何
+
+ 
 and so on......
