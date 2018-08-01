@@ -75,7 +75,6 @@ if __name__ == "__main__":
     with tf.Session() as sess:
         RF = Reinforce(env, [64], sess)
         update_iter = 0
-        step_his = []
         running_reward=0
         for episode in range(EPISODES):
             state = env.reset()

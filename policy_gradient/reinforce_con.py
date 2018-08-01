@@ -34,7 +34,7 @@ class Reinforce():
         self.policynet(scope_var,clt_name_var)
         self.sess = sess
         self.sess.run(tf.global_variables_initializer())
-        tf.summary.FileWriter("./Reinforce_con/summaries", sess.graph)
+        self.writer = tf.summary.FileWriter("./Reinforce_con/summaries", sess.graph)
 
 
     def policynet(self, scope, collections_name):
@@ -55,22 +55,26 @@ class Reinforce():
             with tf.variable_scope("layer2"):
                 weights2 = tf.get_variable(name = "weights", dtype=tf.float32, shape=[self.hidden_size, self.action_dim], initializer=weights_init, collections=collections_name)
                 bias2 = tf.get_variable(name = "bias", dtype=tf.float32, shape=[self.action_dim], initializer=bias_init, collections=collections_name)
-                mu = tf.matmul(h1, weights2) + bias2
+                mu = tf.nn.tanh(tf.matmul(h1, weights2) + bias2)
                 
             with tf.variable_scope("layer3"):
                 weights3 = tf.get_variable(name = "weights", dtype=tf.float32, shape=[self.hidden_size, self.action_dim], initializer=weights_init, collections=collections_name)
                 bias3 = tf.get_variable(name = "bias", dtype=tf.float32, shape=[self.action_dim], initializer=bias_init, collections=collections_name)
-                sigma = tf.matmul(h1, weights3) + bias3
+                sigma = tf.nn.softplus(tf.matmul(h1, weights3) + bias3)
     
         self.mu, self.sigma = tf.squeeze(mu*2), tf.squeeze(sigma+0.1)
+        tf.summary.histogram('/mu', self.mu) 
+        tf.summary.histogram('/sigma', self.sigma) 
         self.normal_dist = tf.distributions.Normal(self.mu, self.sigma)
         self.act = tf.clip_by_value(self.normal_dist.sample(1), action_bound[0], action_bound[1])
         
         with tf.variable_scope("loss"):
             self.action = tf.clip_by_value(self.action, action_bound[0], action_bound[1])
             self.log_prob = self.normal_dist.log_prob(self.action)
-            self.entropy = -0.5*(tf.log(sigma*sigma+2*pi)+1)
-            self.loss = -tf.reduce_mean(self.log_prob * self.target-self.entropy*0.0001)
+            self.entropy = self.normal_dist.entropy()
+            tf.summary.histogram('/entropy', self.entropy) 
+            self.loss = -tf.reduce_mean(self.log_prob * self.target-self.entropy*0.01)
+            tf.summary.histogram('/loss', self.loss) 
 
         with tf.variable_scope("train"):
             self.train_op = tf.train.RMSPropOptimizer(0.01).minimize(self.loss)
@@ -95,7 +99,6 @@ if __name__ == "__main__":
     with tf.Session() as sess:
         RF = Reinforce(env, 64, sess)
         update_iter = 0
-        step_his = []
         running_reward=0
         for episode in range(EPISODES):
             state = env.reset()
@@ -111,6 +114,7 @@ if __name__ == "__main__":
                 #keep track of transition        
                 memory.append(Transition(state=state, action=action, reward=reward, next_state=next_state, done=done))
                 state = next_state
+                print("step = {}".format(step))
                 
             running_reward = running_reward*0.99 + 0.01*reward_all
             print("episode = {} reward = {}".format(episode, running_reward))
@@ -131,4 +135,7 @@ if __name__ == "__main__":
             advantage -= np.mean(advantage)
             advantage /= np.std(advantage)
             RF.train(states, advantage, actions)
+            merged = tf.summary.merge_all()
+            rs = sess.run(merged,feed_dict={RF.inputs: states, RF.target: advantage, RF.action: actions})
+            RF.writer.add_summary(rs, episode)
     env.close()
