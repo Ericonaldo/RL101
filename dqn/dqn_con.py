@@ -150,8 +150,8 @@ if __name__ == "__main__":
                     DQN.decay_epsilon()
                                
                 state = next_state
-                print(update_iter)
-                print("step = {}".format(step))
+                #print(update_iter)
+                #print("step = {}".format(step))
 
 
                 #if done:

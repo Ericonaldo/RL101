@@ -7,21 +7,20 @@ import tensorflow.contrib.layers as layers
 import matplotlib
 from math import *
 
-ENV = "Pendulum-v0"
+ENV = "CartPole-v0"
 
 MEMORY_SIZE = 10000
 EPISODES = 1000
-MAX_STEP = 200
+MAX_STEP = 500
 GAMMA = 0.9
 LR_A = 0.001    # learning rate for actor
 LR_C = 0.01     # learning rate for critic
 
 env = gym.make(ENV)
-action_bound = [env.action_space.low, env.action_space.high] 
 
 class actor():
     def __init__(self, env, hiddens, sess=None):
-        self.action_dim = env.action_space.shape[0]
+        self.action_dim = env.action_space.n
         self.state_dim = env.observation_space.shape[0]
         self.hiddens = hiddens
         scope_var = "actor_network"
@@ -29,7 +28,7 @@ class actor():
         self.network(scope_var,clt_name_var)
         self.sess = sess
         self.sess.run(tf.global_variables_initializer())
-        tf.summary.FileWriter("./ac_con/summaries", sess.graph)
+        tf.summary.FileWriter("./ac_dis/summaries", sess.graph)
 
 
     def network(self, scope, collections_name, reuse=tf.AUTO_REUSE):
@@ -37,29 +36,21 @@ class actor():
         #bias_init = tf.constant_initializer(0.1)
         
         self.inputs = tf.placeholder(dtype = tf.float32, shape=[None, self.state_dim],  name = "inputs")
-        self.td_error = tf.placeholder(dtype = tf.float32, shape = None, name = "td_error")
-        self.action = tf.placeholder(dtype = tf.float32, shape = None, name = "action")
+        self.td_error = tf.placeholder(dtype = tf.float32, shape = [None,], name = "td_error")
+        self.action = tf.placeholder(dtype = tf.int32, shape = [None,], name = "action")
 
         with tf.variable_scope(scope, reuse = reuse):
             out = self.inputs
             for hidden in self.hiddens:
                 out = tf.contrib.layers.fully_connected(out, num_outputs = hidden, activation_fn = tf.nn.relu)
-            mu = tf.contrib.layers.fully_connected(out, num_outputs = self.action_dim, activation_fn = tf.nn.tanh)
-            sigma = tf.contrib.layers.fully_connected(out, num_outputs = self.action_dim, activation_fn = tf.nn.softplus)
+            out = tf.contrib.layers.fully_connected(out, num_outputs = self.action_dim, activation_fn = None)
         
-        global_step = tf.Variable(0, trainable=False)
-        self.mu, self.sigma = tf.squeeze(mu * 2), tf.squeeze(sigma+0.1)
-        tf.summary.histogram("actorlayer" + '/mu', self.mu)
-        tf.summary.histogram("actorlayer" + '/sigma', self.sigma)
-        self.normal_dist = tf.distributions.Normal(self.mu, self.sigma)
-        self.act = tf.clip_by_value(self.normal_dist.sample(1), action_bound[0], action_bound[1])     
+        self.act_prob = tf.nn.softmax(out)
+        tf.summary.histogram("actorlayer" + '/act_prob', self.act_prob)
         
         with tf.variable_scope("loss"):
-            self.log_prob = self.normal_dist.log_prob(self.action)
-            self.entropy = self.normal_dist.entropy()
-            tf.summary.histogram('entropy', self.entropy)
-            self.loss = -(self.log_prob * self.td_error - self.entropy*0.01)
-            tf.summary.histogram("loss", self.loss)
+            self.log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = self.act_prob, labels = self.action)
+            self.loss = tf.reduce_mean(self.log_prob * self.td_error)
 
         with tf.variable_scope("train"):
             self.train_op = tf.train.AdamOptimizer(LR_A).minimize(self.loss, global_step = tf.Variable(0, trainable=False))
@@ -67,20 +58,18 @@ class actor():
     def train(self, state, td_error, action):
         "train process"
         state = state[np.newaxis, :]
-        loss, _ = self.sess.run([self.loss, self.train_op], feed_dict={self.inputs: state, self.td_error: td_error, self.action: action})
+        loss, _ = self.sess.run([self.loss, self.train_op], feed_dict={self.inputs: state, self.td_error: [td_error], self.action: [action]})
         return loss
     
     def choose_action(self, current_state):
         current_state = current_state[np.newaxis, :]
-        action = self.sess.run(self.act, feed_dict={self.inputs: current_state})
-        #print("state",current_state)
-        #print("action",action)
-        #print(self.sess.run([self.mu, self.sigma],feed_dict={self.inputs: current_state}))
+        prob_weights = self.sess.run(self.act_prob, feed_dict={self.inputs: current_state})    # 所有 action 的概率
+        action = np.random.choice(range(prob_weights.shape[1]), p=prob_weights.ravel())  # 根据概率来选 action
         return action
 
 class critic():
     def __init__(self, env, hiddens, sess=None):
-        self.action_dim = env.action_space.shape[0]
+        self.action_dim = env.action_space.n
         self.state_dim = env.observation_space.shape[0]
         self.hiddens = hiddens
         scope_var = "critic_network"
@@ -132,16 +121,22 @@ if __name__ == "__main__":
         for episode in range(EPISODES):
             state = env.reset()
             reward_all = 0
+            step_view = 0
             for step in range(MAX_STEP):
                 env.render()
                 action = a.choose_action(state)
                 next_state, reward, done , _ = env.step(action)
-                reward /= 10
+                if step < 199 and done:
+                    reward -= 10
                 reward_all += reward
                 td_error = c.train(state, action, next_state)
                 a.train(state, td_error, action)
+                if done:
+                    step_view = step
+                    break
                 state = next_state
-            
+                
+            merged = tf.summary.merge_all()
             running_reward = running_reward*0.99 + 0.01*reward_all
-            print("episode = {} reward = {}".format(episode, running_reward))
+            print("episode = {} step_view={} reward = {}".format(episode, step_view, running_reward))
     env.close()
