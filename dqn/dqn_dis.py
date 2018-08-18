@@ -93,12 +93,13 @@ class DeepQNetwork():
         # array dim : (xx, ) --> (1, xx)
         q = self.sess.run(self.q_value, feed_dict={self.inputs_q: current_state})
 
-         e-greedy
+        # e-greedy
         if np.random.random() < self.epsilon:
             action_chosen = np.random.randint(0, self.action_dim)
         else:
             action_chosen = np.argmax(q)
         action_chosen = np.argmax(q)
+        return action_chosen
     
     def decay_epsilon(self):
         if self.epsilon > 0.03:
@@ -133,10 +134,10 @@ if __name__ == "__main__":
                     DQN.train(state = batch_state, reward = batch_reward, action = batch_action, state_next = batch_next_state, done = batch_done)
                     update_iter += 1
     
-                if update_iter % UPDATE_PERIOD == 0:
+                if update_iter and update_iter % UPDATE_PERIOD == 0:
                     DQN.update_prmt()
 
-                if update_iter % 200 == 0:
+                if update_iter and update_iter % 200 == 0:
                     DQN.decay_epsilon()
                                
                 if done:
