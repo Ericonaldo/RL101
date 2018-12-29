@@ -15,7 +15,7 @@ Ruqirements: 需安装gym和tensorflow
 
     -reinforce_dis: 离散动作的REINFORCE算法，solve的环境是"CartPole-v0"
     
-    -reinforce_con: 连续动作的REINFORCE算法，solve的环境是"Pendulum-v0"，不能收敛，不知为何
+    -reinforce_con: 连续动作的REINFORCE算法，solve的环境是"Pendulum-v0"，不能收敛，估计是方差太大了
     
 ## actor_critic:
 
