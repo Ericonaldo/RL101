@@ -92,7 +92,7 @@ class PPO(object):
 
 
 if __name__ == "__main__":
-    env = gym.make(ENV).unwrapped()   
+    env = gym.make(ENV).unwrapped 
     env.seed(1)
     all_ep_r = []
     with tf.Session() as sess:
