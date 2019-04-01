@@ -102,7 +102,7 @@ if __name__ == "__main__":
             buffer_s, buffer_a, buffer_r = [], [], []
             for t in range(MAX_STEP):
                 env.render()
-                a = ppo.choose(s)
+                a = ppo.choose_action(s)
                 s_, r, done, _ = env.step(a)
                 buffer_s.append(s)
                 buffer_a.append(a)
