@@ -128,7 +128,7 @@ if __name__ == "__main__":
             if ep==0:
                 all_ep_r.append(ep_r)
             else:
-                all_ep_r.append(all_ep_r.append(all_ep_r[-1]*0.9 + ep_r*0.1))
+                all_ep_r.append(all_ep_r[-1]*0.9 + ep_r*0.1)
 
             print(
                 'Ep: %i' % ep,
