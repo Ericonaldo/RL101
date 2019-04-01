@@ -4,7 +4,7 @@ import numpy as np
 import collections
 import random
 import tensorflow.contrib.layers as layers
-import matplotlib
+import matplotlib as plt
 from math import *
 
 ENV = "Pendulum-v0"
