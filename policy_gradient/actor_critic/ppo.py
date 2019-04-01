@@ -67,7 +67,7 @@ class PPO(object):
             mu = 2 * tf.layers.dense(l1, A_DIM, tf.nn.tanh, trainable = trainable)
             sigma = tf.layers.dense(l1, A_DIM, tf.nn.softplus, trainable = trainable)
             norm_dist = tf.distributions.Normal(loc=mu, scale=sigma)
-        params = tf.get_collection(tf.Graphkeys.GLOBAL_VARIABLES, scope=name)
+        params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=name)
         return norm_dist, params
 
     def update(self, s, a, r):
