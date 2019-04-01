@@ -98,6 +98,7 @@ if __name__ == "__main__":
     with tf.Session() as sess:
         ppo = PPO(sess)
         for ep in range(EPISODES):
+            ep_r = 0
             s = env.reset()
             buffer_s, buffer_a, buffer_r = [], [], []
             for t in range(MAX_STEP):
