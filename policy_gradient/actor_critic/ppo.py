@@ -32,7 +32,7 @@ class PPO(object):
             self.tfdc_r = tf.placeholder(tf.float32, [None, 1], 'discounted_r')
             self.advantage = self.tfdc_r - self.v
             self.closs = tf.reduce_mean(tf.square(self.advantage))
-            self.ctrain_op = tf.train.AdamOptimizer(C_LR).minimize(self.closs)
+            self.ctrain_op = tf.train.AdamOptimizer(LR_C).minimize(self.closs)
 
         # actor
         pi, pi_params = self._build_anet('pi', trainable=True)
@@ -50,7 +50,7 @@ class PPO(object):
                 surr = ratio * self.tfadv
 
                 self.aloss = -tf.reduce_mean(tf.minimum(
-                    syrr,
+                    surr,
                     tf.clip_by_value(ratio, 1.-EPSILON, 1.+EPSILON*self.tfadv)
                 ))
         
