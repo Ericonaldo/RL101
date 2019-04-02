@@ -141,5 +141,5 @@ if __name__ == "__main__":
     plt.plot(np.arange(len(all_ep_r)), all_ep_r)
     plt.xlabel('Episode')
     plt.ylabel('Moving averaged episode reward')
-    plt.savefig("reward.png")
+    plt.savefig("ppo_reward.png")
     plt.show()
