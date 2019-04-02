@@ -4,8 +4,11 @@ import numpy as np
 import collections
 import random
 import tensorflow.contrib.layers as layers
-import matplotlib as plt
+import matplotlib
+from matplotlib import pyplot as plt
+matplotlib.use("Agg")
 from math import *
+import math
 
 ENV = "Pendulum-v0"
 
@@ -49,9 +52,9 @@ class PPO(object):
                 ratio = pi.prob(self.tfa) / oldpi.prob(self.tfa)
                 surr = ratio * self.tfadv
 
-                self.aloss = -tf.reduce_mean(tf.minimum(
+            self.aloss = -tf.reduce_mean(tf.minimum(
                     surr,
-                    tf.clip_by_value(ratio, 1.-EPSILON, 1.+EPSILON*self.tfadv)
+                    tf.clip_by_value(ratio, 1.-EPSILON, 1.+EPSILON) *self.tfadv
                 ))
         
         with tf.variable_scope('atrain'):
@@ -75,10 +78,10 @@ class PPO(object):
         adv = self.sess.run(self.advantage, {self.tfs: s, self.tfdc_r:r})
 
         # update actor
-        [self.sess.run(self.atrain_op, {self.tfs: s, self.tfa: a, self.tfadv: adv}) for _ in range(C_UPDATE_STEPS)]
+        [self.sess.run(self.atrain_op, {self.tfs: s, self.tfa: a, self.tfadv: adv}) for _ in range(A_UPDATE_STEPS)]
 
         # update critic
-        [self.sess.run(self.ctrain_op, {self.tfs:s, self.tfdc_r:r}) for _ in range(A_UPDATE_STEPS)]
+        [self.sess.run(self.ctrain_op, {self.tfs:s, self.tfdc_r:r}) for _ in range(C_UPDATE_STEPS)]
 
     def choose_action(self, s):
         s = s[np.newaxis, :]
@@ -107,7 +110,7 @@ if __name__ == "__main__":
                 s_, r, done, _ = env.step(a)
                 buffer_s.append(s)
                 buffer_a.append(a)
-                buffer_r.append(r)
+                buffer_r.append((r+8)/8)
                 s = s_
                 ep_r += r
 
@@ -131,12 +134,12 @@ if __name__ == "__main__":
                 all_ep_r.append(all_ep_r[-1]*0.9 + ep_r*0.1)
 
             print(
-                'Ep: %i' % ep,
-                '|Ep_r: %i' % ep_r,
+                'Ep: ', ep,
+                '|Ep_r: ', ep_r,
             )
-
-
-        plt.plot(np.arange(len(all_ep_r)), all_ep_r)
-        plt.xlabel('Episode')
-        plt.ylabel('Moving averaged episode reward')
-        plt.show()
+    env.close()
+    plt.plot(np.arange(len(all_ep_r)), all_ep_r)
+    plt.xlabel('Episode')
+    plt.ylabel('Moving averaged episode reward')
+    plt.savefig("reward.png")
+    plt.show()
