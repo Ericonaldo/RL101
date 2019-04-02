@@ -17,6 +17,8 @@ Ruqirements: 需安装gym和tensorflow
     
     -reinforce_con: 连续动作的REINFORCE算法，solve的环境是"Pendulum-v0"，不能收敛，估计是方差太大了
     
+    -actor_critic/ppo: 连续动作的PPO算法，solve的环境是"Pendulum-v0"
+    
 ## actor_critic:
 
     -stochastic_ac_dis: 离散动作的随机策略AC算法，solve的环境是"CartPole-v0"
