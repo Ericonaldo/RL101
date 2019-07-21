@@ -15,7 +15,7 @@ from math import *
 ENV = "Pendulum-v0"
 
 MEMORY_SIZE = 10000
-EPISODES = 500
+EPISODES = 250
 MAX_STEP = 200
 GAMMA = 0.9
 BATCH_SIZE = 64
@@ -47,7 +47,7 @@ class Actor(nn.Module):
         out = self.fc2(out)
         out = torch.tanh(out)
         out = out * 2
-        out = torch.clamp(out, float(action_bound[0]), float(action_bound[1])) 
+        # out = torch.clamp(out, float(action_bound[0]), float(action_bound[1])) 
         return out
 
 class Critic(nn.Module):
@@ -57,15 +57,17 @@ class Critic(nn.Module):
         self.state_dim = env.observation_space.shape[0]
         self.hiddens = hiddens[0]
         self.fc1 = nn.Linear(self.state_dim, self.hiddens)
-        self.fc2 = nn.Linear(self.hiddens+self.action_dim, self.hiddens)
+        self.fc2 = nn.Linear(self.action_dim, self.hiddens)
         self.fc3 = nn.Linear(self.hiddens, 1)
 
     def forward(self, input_s, input_a):
         out = self.fc1(input_s)
-        out = torch.relu(out)
-        out = self.fc2(torch.cat([out, input_a],1))
-        out = torch.relu(out)
+        out1 = torch.relu(out)
+        out = self.fc2(input_a)
+        out2 = torch.relu(out)
+        out = out1+out2
         out = self.fc3(out)
+        #print(out)
         return out
 
 
@@ -88,19 +90,22 @@ class DDPG(object):
         
         self.is_training = True
         
-    def train(self, state, next_state, action, reward):
+    def train(self, state, next_state, action, reward, done):
         # critic update
-        self.eval_q.zero_grad()
-        next_q = self.target_q(to_tensor(next_state, volatile=True), self.target_a(to_tensor(next_state, volatile=True)))
+        next_q = self.target_q(
+                to_tensor(next_state, volatile=True),
+                self.target_a(to_tensor(next_state, volatile=True))
+                )
         next_q.volatile=False
         #print("action: ", action)
         #print("q(s,a): ", self.eval_q(to_tensor(state), to_tensor(action)))
-        q_t = to_tensor(reward) + GAMMA * next_q
+        q_t = to_tensor(reward) + GAMMA * to_tensor(done) * next_q
+        self.eval_q.zero_grad()
         q = self.eval_q(to_tensor(state), to_tensor(action))
-
         self.closs =  criterion(q, q_t)
         self.closs.backward()
         #print("closs: ", self.closs.data)
+        # print(self.eval_q.parameters)
         self.optim_q.step()
 
         # actor update
@@ -125,11 +130,11 @@ class DDPG(object):
         current_state = current_state[np.newaxis, :]
         current_state = to_tensor(current_state)
         action = to_numpy(self.eval_a(current_state)).squeeze(0)
-        action = np.clip(action + np.random.normal(mu, sigma), action_bound[0],action_bound[1])
 
         return action
     
 def to_tensor(ndarray, volatile=False, requires_grad=False, dtype=torch.FloatTensor):
+     
      return Variable(
              torch.from_numpy(ndarray), volatile=volatile, requires_grad=requires_grad).type(dtype)
 
@@ -161,6 +166,7 @@ if __name__ == "__main__":
                         
             action = ddpg.choose_action(state)              
             # action = np.clip(np.random.normal(action, sigma), action_bound[0], action_bound[1])    # add randomness to action selection for exploration
+            action = np.clip(action + np.random.normal(mu, sigma), action_bound[0],action_bound[1])
             next_state, reward, done , _ = env.step(action)
             # print(reward)
             reward_all += reward
@@ -168,11 +174,12 @@ if __name__ == "__main__":
             memory.append(Transition(state, action, reward/10, next_state, float(done)))
             
             if len(memory) > 10000: # BATCH_SIZE * 4:
-                sigma *= .9995
+                sigma *= .99995
                 batch_trasition = random.sample(memory, BATCH_SIZE)
                 batch_state, batch_action, batch_reward, batch_next_state, batch_done = map(np.array, zip(*batch_trasition))
-                ddpg.train(state = batch_state, next_state = batch_next_state, action = batch_action, reward = batch_reward)
-
+                ddpg.train(state = batch_state, next_state = batch_next_state, action = batch_action, reward = batch_reward, done=batch_done)
+            if done:
+                break
             state = next_state
             
         #running_reward = running_reward*0.99 + 0.01*reward_all
