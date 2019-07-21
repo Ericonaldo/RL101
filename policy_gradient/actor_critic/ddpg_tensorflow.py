@@ -1,3 +1,4 @@
+#!/Users/mhliu/Program/anaconda3/envs/rl/bin/python
 import tensorflow as tf
 import gym
 import numpy as np
@@ -5,12 +6,14 @@ import collections
 import random
 import tensorflow.contrib.layers as layers
 import matplotlib
+# matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
 from math import *
 
 ENV = "Pendulum-v0"
 
 MEMORY_SIZE = 10000
-EPISODES = 1000
+EPISODES = 250
 MAX_STEP = 200
 GAMMA = 0.9
 BATCH_SIZE = 32
@@ -95,8 +98,8 @@ class DDPG():
         "train process"
         self.sess.run(self.soft_replace)
         
-        self.sess.run(self.atrain_op, {self.eval_s: state})
-        self.sess.run(self.ctrain_op, {self.eval_s: state, self.target_s: next_state, self.eval_a: action, self.reward: reward})
+        self.sess.run(self.atrain_op, {self.eval_s: state}) # 注意这里只传入了eval_s，说明Q(s,a)的a也是经过policy network出来的，这样是为了计算梯度。否则就没有梯度了
+        self.sess.run(self.ctrain_op, {self.eval_s: state, self.target_s: next_state, self.eval_a: action, self.reward: reward}) # 注意eval_a结点直接用action填充，eval_a的梯度不需要回传
     
     
     def choose_action(self, current_state):
@@ -108,7 +111,11 @@ memory=[]
 Transition = collections.namedtuple("Transition", ["state", "action", "reward", "next_state", "done"])
 
 
-var = 3
+sigma = 3
+mu = 0
+
+ep=[]
+re=[]
 if __name__ == "__main__":
     with tf.Session() as sess:
         ddpg = DDPG(env, [30], sess)
@@ -122,15 +129,16 @@ if __name__ == "__main__":
                 env.render()
                             
                 action = ddpg.choose_action(state)              
-                action = np.clip(np.random.normal(action, var), -2, 2)    # add randomness to action selection for exploration
+                # action = np.clip(np.random.normal(action, sigma), action_bound[0], action_bound[1])    # add randomness to action selection for exploration
+                action = np.clip(action + np.random.normal(mu, sigma), action_bound[0],action_bound[1])
                 next_state, reward, done , _ = env.step(action)
-                #print(reward)
+                # print(reward)
                 reward_all += reward
                 
                 memory.append(Transition(state, action, reward/10, next_state, float(done)))
                 
                 if len(memory) > 10000: # BATCH_SIZE * 4:
-                    var *= .9995
+                    sigma *= .9995
                     batch_trasition = random.sample(memory, BATCH_SIZE)
                     batch_state, batch_action, batch_reward, batch_next_state, batch_done = map(np.array, zip(*batch_trasition))
                     ddpg.train(state = batch_state, next_state = batch_next_state, action = batch_action, reward = batch_reward)
@@ -141,4 +149,8 @@ if __name__ == "__main__":
             #running_reward = running_reward*0.99 + 0.01*reward_all
             #print("episode = {} reward = {}".format(episode, running_reward))
             print("episode = {} reward = {}".format(episode, reward_all))
+            ep.append(episode)
+            re.append(reward_all)
     env.close()
+    plt.plot(ep, re)
+    plt.show()
