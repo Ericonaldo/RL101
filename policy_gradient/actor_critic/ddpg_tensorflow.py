@@ -119,7 +119,7 @@ re=[]
 if __name__ == "__main__":
     with tf.Session() as sess:
         ddpg = DDPG(env, [30], sess)
-        tf.summary.FileWriter("./Reinforce_con/summaries", sess.graph)
+        #tf.summary.FileWriter("./Reinforce_con/summaries", sess.graph)
 
         running_reward=0
         for episode in range(EPISODES):
@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
                 state = next_state
                 
-            merged = tf.summary.merge_all()
+            #merged = tf.summary.merge_all()
             #running_reward = running_reward*0.99 + 0.01*reward_all
             #print("episode = {} reward = {}".format(episode, running_reward))
             print("episode = {} reward = {}".format(episode, reward_all))
