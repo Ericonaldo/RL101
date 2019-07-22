@@ -126,7 +126,7 @@ if __name__ == "__main__":
             state = env.reset()
             reward_all = 0
             for step in range(MAX_STEP):
-                env.render()
+                #  env.render()
                             
                 action = ddpg.choose_action(state)              
                 # action = np.clip(np.random.normal(action, sigma), action_bound[0], action_bound[1])    # add randomness to action selection for exploration

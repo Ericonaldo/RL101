@@ -99,9 +99,9 @@ class DDPG(object):
         next_q.volatile=False
         #print("action: ", action)
         #print("q(s,a): ", self.eval_q(to_tensor(state), to_tensor(action)))
-        q_t = to_tensor(reward) + GAMMA * to_tensor(done) * next_q
+        q_t = to_tensor(reward) + GAMMA * to_tensor(done) * next_q.squeeze()
         self.eval_q.zero_grad()
-        q = self.eval_q(to_tensor(state), to_tensor(action))
+        q = self.eval_q(to_tensor(state), to_tensor(action)).squeeze()
         self.closs =  criterion(q, q_t)
         self.closs.backward()
         #print("closs: ", self.closs.data)
