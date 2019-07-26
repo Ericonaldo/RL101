@@ -57,18 +57,14 @@ class Critic(nn.Module):
         self.action_dim = env.action_space.shape[0]
         self.state_dim = env.observation_space.shape[0]
         self.hiddens = hiddens[0]
-        self.fc1 = nn.Linear(self.state_dim+self.action_dim, self.hiddens)
-        self.fc2 = nn.Linear(self.hiddens, self.hiddens)
+        self.fc1 = nn.Linear(self.state_dim, self.hiddens)
+        self.fc2 = nn.Linear(self.action_dim, self.hiddens)
         self.fc3 = nn.Linear(self.hiddens, 1)
 
     def forward(self, input_s, input_a):
-        out = self.fc1(torch.cat([input_s, input_a], 1))
-        # out1 = torch.relu(out)
-        # out = self.fc2(input_a)
-        # out2 = torch.relu(out)
-        # out = out1+out2
-        out = torch.relu(out)
-        out = self.fc2(out)
+        out1 = self.fc1(input_s)
+        out2 = self.fc2(input_a)
+        out = out1+out2
         out = torch.relu(out)
         out = self.fc3(out)
         #print(out)
