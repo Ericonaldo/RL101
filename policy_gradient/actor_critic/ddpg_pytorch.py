@@ -50,27 +50,28 @@ class Actor(nn.Module):
         # out = torch.clamp(out, float(action_bound[0]), float(action_bound[1])) 
         return out
 
+
 class Critic(nn.Module):
     def __init__(self, env, hiddens):
         super(Critic, self).__init__()
         self.action_dim = env.action_space.shape[0]
         self.state_dim = env.observation_space.shape[0]
         self.hiddens = hiddens[0]
-        self.fc1 = nn.Linear(self.state_dim, self.hiddens)
-        self.fc2 = nn.Linear(self.action_dim, self.hiddens)
+        self.fc1 = nn.Linear(4, self.hiddens)
+        self.fc2 = nn.Linear(self.hiddens, self.hiddens)
         self.fc3 = nn.Linear(self.hiddens, 1)
 
     def forward(self, input_s, input_a):
-        out = self.fc1(input_s)
-        out1 = torch.relu(out)
-        out = self.fc2(input_a)
-        out2 = torch.relu(out)
-        out = out1+out2
+        out = self.fc1(torch.cat([input_s, input_a], 1))
+        # out1 = torch.relu(out)
+        # out = self.fc2(input_a)
+        # out2 = torch.relu(out)
+        # out = out1+out2
+        out = self.fc2(out)
         out = self.fc3(out)
         #print(out)
         return out
-
-
+     
 class DDPG(object):
     def __init__(self, env, hiddens):
         self.action_dim = env.action_space.shape[0]
@@ -155,7 +156,7 @@ Transition = collections.namedtuple("Transition", ["state", "action", "reward", 
 ep = []
 re = []
 if __name__ == "__main__":
-    ddpg = DDPG(env, [30])
+    ddpg = DDPG(env, [32])
 
     running_reward=0
     for episode in range(EPISODES):
@@ -171,7 +172,7 @@ if __name__ == "__main__":
             # print(reward)
             reward_all += reward
             
-            memory.append(Transition(state, action, reward/10, next_state, float(done)))
+            memory.append(Transition(state, action, reward/10, next_state, float(1-done)))
             
             if len(memory) > 10000: # BATCH_SIZE * 4:
                 sigma *= .99995
