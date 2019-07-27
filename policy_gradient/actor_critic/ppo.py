@@ -127,6 +127,9 @@ if __name__ == "__main__":
                     # 清空buffer
                     buffer_s, buffer_a, buffer_r = [], [], []
                     ppo.update(bs, ba, br) # 更新ppo
+                if done:
+                    break
+
 
             if ep==0:
                 all_ep_r.append(ep_r)

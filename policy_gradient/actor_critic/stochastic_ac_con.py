@@ -141,6 +141,9 @@ if __name__ == "__main__":
                 td_error = c.train(state, action, next_state)
                 a.train(state, td_error, action)
                 state = next_state
+                if done:
+                    break
+
                 
             merged = tf.summary.merge_all()
             running_reward = running_reward*0.99 + 0.01*reward_all

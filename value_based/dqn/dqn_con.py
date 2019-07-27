@@ -154,9 +154,9 @@ if __name__ == "__main__":
                 #print("step = {}".format(step))
 
 
-                #if done:
+                if done:
                 #    print("[episode = {} ] step = {}".format(step))
-                #    break
+                    break
                     
                 state = next_state
                 step +=1

@@ -94,6 +94,9 @@ if __name__ == "__main__":
                     step_view = step
                     break
                 state = next_state
+                if done:
+                    break
+
             
             running_reward = running_reward*0.99 + 0.01*reward_all
             print("episode = {} step_view={} reward = {}".format(episode, step_view, running_reward))

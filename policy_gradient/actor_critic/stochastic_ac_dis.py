@@ -135,6 +135,9 @@ if __name__ == "__main__":
                     step_view = step
                     break
                 state = next_state
+                if done:
+                    break
+
                 
             merged = tf.summary.merge_all()
             running_reward = running_reward*0.99 + 0.01*reward_all

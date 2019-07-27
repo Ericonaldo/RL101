@@ -115,6 +115,8 @@ if __name__ == "__main__":
                 memory.append(Transition(state=state, action=action, reward=reward, next_state=next_state, done=done))
                 state = next_state
                 #print("step = {}".format(step))
+                if done:
+                    break
                 
             running_reward = running_reward*0.99 + 0.01*reward_all
             print("episode = {} reward = {}".format(episode, running_reward))

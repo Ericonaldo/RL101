@@ -144,6 +144,9 @@ if __name__ == "__main__":
                     ddpg.train(state = batch_state, next_state = batch_next_state, action = batch_action, reward = batch_reward)
 
                 state = next_state
+                if done:
+                    break
+
                 
             #merged = tf.summary.merge_all()
             #running_reward = running_reward*0.99 + 0.01*reward_all
